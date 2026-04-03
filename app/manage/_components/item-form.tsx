@@ -6,6 +6,12 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
+} from "@/components/ui/input-group";
 import { itemSchema } from "@/schema/item-schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
@@ -66,21 +72,49 @@ export function ItemForm() {
           <Controller
             name="price"
             control={form.control}
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel>Price (MYR)</FieldLabel>
-                <Input
-                  id={field.name}
-                  {...field}
-                  aria-invalid={fieldState.invalid}
-                  type=""
-                  placeholder="Enter the price of the item"
-                />
-                {fieldState.invalid && (
-                  <FieldError errors={[fieldState.error]} />
-                )}
-              </Field>
-            )}
+            render={({ field, fieldState }) => {
+              const displayValue =
+                field.value === 0
+                  ? ""
+                  : field.value.toLocaleString("en-MY", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    });
+              return (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Price (MYR)</FieldLabel>
+                  <InputGroup>
+                    <InputGroupInput
+                      id={field.name}
+                      {...field}
+                      aria-invalid={fieldState.invalid}
+                      type="tel"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={displayValue}
+                      onChange={(e) => {
+                        // get raw string
+                        const rawString = e.target.value;
+                        // strip everything except number
+                        const justDigits = rawString.replace(/\D/g, "");
+                        // parse to integer cents
+                        const cents = parseInt(justDigits || "0", 10);
+                        // convert back to float for zod
+                        const floatValue = cents / 100;
+                        field.onChange(floatValue);
+                      }}
+                    />
+                    <InputGroupAddon>
+                      <InputGroupText>RM</InputGroupText>
+                    </InputGroupAddon>
+                  </InputGroup>
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              );
+            }}
           />
           <Controller
             name="stock"
@@ -92,8 +126,15 @@ export function ItemForm() {
                   id={field.name}
                   {...field}
                   aria-invalid={fieldState.invalid}
-                  type="number"
+                  type="tel"
                   placeholder="Enter the stock quantity"
+                  value={field.value === 0 ? "" : field.value}
+                  onChange={(e) => {
+                    // native input return string, parse int for zod
+                    const justDigit = e.target.value.replace(/\D/g, "");
+                    const val = parseInt(justDigit || "0", 10);
+                    field.onChange(val);
+                  }}
                 />
                 {fieldState.invalid && (
                   <FieldError errors={[fieldState.error]} />
