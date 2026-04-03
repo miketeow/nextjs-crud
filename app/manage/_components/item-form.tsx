@@ -1,4 +1,5 @@
 "use client";
+import { createItem } from "@/actions/items-actions";
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -16,6 +17,7 @@ import {
 import { itemSchema } from "@/schema/item-schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
 import z from "zod";
 
 export function ItemForm() {
@@ -29,8 +31,14 @@ export function ItemForm() {
     resolver: zodResolver(itemSchema),
   });
 
-  function onSubmit(data: z.infer<typeof itemSchema>) {
-    console.log(data);
+  async function onSubmit(data: z.infer<typeof itemSchema>) {
+    const result = await createItem(data);
+    if (result?.success) {
+      toast.success(result.message);
+      form.reset();
+    } else {
+      toast.error(result?.message);
+    }
   }
   return (
     <form onSubmit={form.handleSubmit(onSubmit)}>
