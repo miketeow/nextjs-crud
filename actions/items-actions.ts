@@ -16,10 +16,11 @@ export async function createItem(data: unknown) {
   const parsedData = itemSchema.safeParse(data);
 
   if (!parsedData.success) {
+    const flattened = z.flattenError(parsedData.error);
     return {
       success: false,
       message: "Invalid form data, please check your input and try again.",
-      errors: z.flattenError(parsedData.error),
+      errors: flattened.fieldErrors,
     };
   }
 
@@ -35,6 +36,11 @@ export async function createItem(data: unknown) {
     });
 
     revalidatePath("/manage");
+
+    return {
+      success: true,
+      message: "Item successfully added to inventory!",
+    };
   } catch (error) {
     console.error("Database error inserting item:", error);
     return {
