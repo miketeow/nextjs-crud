@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/ui/button";
 import {
   Field,
   FieldError,
@@ -144,6 +145,19 @@ export function ItemForm() {
           />
         </div>
       </FieldGroup>
+      <div className="flex justify-end w-full pt-4 gap-4">
+        <Button
+          type="button"
+          variant="destructive"
+          onClick={() => form.reset()}
+          disabled={form.formState.isSubmitting}
+        >
+          Reset
+        </Button>
+        <Button type="submit" disabled={form.formState.isSubmitting}>
+          {form.formState.isSubmitting ? "Submitting..." : "Add Item"}
+        </Button>
+      </div>
     </form>
   );
 }
