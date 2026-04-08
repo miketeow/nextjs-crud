@@ -66,21 +66,39 @@ export function DataTable<TData, TValue>({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
+              <>
+                {table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+
+                {/*padding rows*/}
+                {table.getRowModel().rows.length <
+                  table.getState().pagination.pageSize &&
+                  Array.from({
+                    length:
+                      table.getState().pagination.pageSize -
+                      table.getRowModel().rows.length,
+                  }).map((_, index) => (
+                    <TableRow
+                      key={`ghost-${index}`}
+                      className="hover:bg-transparent border-0"
+                    >
+                      <TableCell colSpan={columns.length} className="h-11.25" />
+                    </TableRow>
                   ))}
-                </TableRow>
-              ))
+              </>
             ) : (
               <TableRow>
                 <TableCell
