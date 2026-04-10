@@ -1,6 +1,6 @@
 "use client";
 import { deleteItem } from "@/actions/items-actions";
-import { ItemForm } from "@/app/manage/_components/item-form";
+import { ItemForm } from "@/app/(dashboard)/manage/_components/item-form";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

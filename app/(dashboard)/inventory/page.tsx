@@ -7,7 +7,7 @@ export default function InventoryPage() {
     <div className="container max-w-5xl mx-auto py-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">
-          Manage your inventory
+          View your inventory
         </h1>
       </div>
       <Suspense fallback={<TableSkeleton />}>

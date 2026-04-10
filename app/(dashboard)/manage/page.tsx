@@ -17,7 +17,7 @@ export default function Manage() {
             Manage Inventory
           </CardTitle>
           <CardDescription className="text-muted-foreground">
-            View and manage your inventory details here.
+            Add new inventory
           </CardDescription>
         </CardHeader>
         <CardContent>
