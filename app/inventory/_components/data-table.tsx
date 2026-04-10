@@ -73,7 +73,7 @@ export function DataTable<TData, TValue>({
                     data-state={row.getIsSelected() && "selected"}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
+                      <TableCell key={cell.id} className="h-15">
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext(),
@@ -95,7 +95,7 @@ export function DataTable<TData, TValue>({
                       key={`ghost-${index}`}
                       className="hover:bg-transparent border-0"
                     >
-                      <TableCell colSpan={columns.length} className="h-11.25" />
+                      <TableCell colSpan={columns.length} className="h-15" />
                     </TableRow>
                   ))}
               </>

@@ -1,5 +1,5 @@
 "use client";
-import { createItem } from "@/actions/items-actions";
+import { createItem, updateItem } from "@/actions/items-actions";
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -20,22 +20,47 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
 
-export function ItemForm() {
+interface ItemFormProps {
+  initialData?: {
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    stock: number;
+  };
+  onSuccess?: () => void;
+}
+export function ItemForm({ initialData, onSuccess }: ItemFormProps) {
   const form = useForm<z.infer<typeof itemSchema>>({
-    defaultValues: {
-      name: "",
-      description: "",
-      price: 0,
-      stock: 0,
-    },
+    defaultValues: initialData
+      ? {
+          name: initialData.name,
+          description: initialData.description,
+          price: initialData.price / 100,
+          stock: initialData.stock,
+        }
+      : {
+          name: "",
+          description: "",
+          price: 0,
+          stock: 0,
+        },
     resolver: zodResolver(itemSchema),
   });
 
   async function onSubmit(data: z.infer<typeof itemSchema>) {
-    const result = await createItem(data);
+    let result;
+    if (initialData) {
+      result = await updateItem(initialData.id, data);
+    } else {
+      result = await createItem(data);
+    }
     if (result?.success) {
       toast.success(result.message);
-      form.reset();
+      if (!initialData) {
+        form.reset();
+      }
+      if (onSuccess) onSuccess();
     } else {
       toast.error(result?.message);
     }
@@ -154,16 +179,22 @@ export function ItemForm() {
         </div>
       </FieldGroup>
       <div className="flex justify-end w-full pt-4 gap-4">
-        <Button
-          type="button"
-          variant="destructive"
-          onClick={() => form.reset()}
-          disabled={form.formState.isSubmitting}
-        >
-          Reset
-        </Button>
+        {!initialData && (
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={() => form.reset()}
+            disabled={form.formState.isSubmitting}
+          >
+            Reset
+          </Button>
+        )}
         <Button type="submit" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? "Submitting..." : "Add Item"}
+          {form.formState.isSubmitting
+            ? "Submitting..."
+            : initialData
+              ? "Save Changes"
+              : "Add Item"}
         </Button>
       </div>
     </form>
