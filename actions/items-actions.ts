@@ -91,3 +91,20 @@ export async function updateItem(itemId: string, data: unknown) {
     };
   }
 }
+
+export async function deleteItem(itemId: string) {
+  try {
+    await db.delete(itemsTable).where(eq(itemsTable.id, itemId));
+    revalidatePath("/inventory");
+    return {
+      success: true,
+      message: "Item successfully deleted!",
+    };
+  } catch (error) {
+    console.error("Database error deleting item:", error);
+    return {
+      success: false,
+      message: "An unexpected database error occurred. Please try again.",
+    };
+  }
+}

@@ -1,10 +1,13 @@
 "use client";
+import { deleteItem } from "@/actions/items-actions";
 import { ItemForm } from "@/app/manage/_components/item-form";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -16,7 +19,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ColumnDef, Row } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
 export type InventoryItem = {
   id: string;
   name: string;
@@ -115,6 +119,21 @@ export const columns: ColumnDef<InventoryItem>[] = [
 function DataTableRowActions({ row }: { row: Row<InventoryItem> }) {
   const book = row.original;
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  const handleDelete = () => {
+    startTransition(async () => {
+      const result = await deleteItem(book.id);
+
+      if (result.success) {
+        toast.success(result.message);
+        setIsDeleteOpen(false);
+      } else {
+        toast.error(result.message);
+      }
+    });
+  };
 
   return (
     <>
@@ -129,7 +148,9 @@ function DataTableRowActions({ row }: { row: Row<InventoryItem> }) {
           <DropdownMenuItem onClick={() => setIsEditOpen(true)}>
             Edit
           </DropdownMenuItem>
-          <DropdownMenuItem>Delete</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setIsDeleteOpen(true)}>
+            Delete
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -140,6 +161,31 @@ function DataTableRowActions({ row }: { row: Row<InventoryItem> }) {
             <DialogDescription>Edit the item information</DialogDescription>
           </DialogHeader>
           <ItemForm initialData={book} onSuccess={() => setIsEditOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>
+              Are you sure you want to delete this items ?
+            </DialogTitle>
+            <DialogDescription>This action cannot be undone</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" disabled={isPending}>
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isPending}
+            >
+              {isPending ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
