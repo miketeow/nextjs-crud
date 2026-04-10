@@ -3,7 +3,7 @@
 import { db } from "@/db";
 import { itemsTable } from "@/db/schema";
 import { itemSchema } from "@/schema/item-schema";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import z from "zod";
 
@@ -37,6 +37,7 @@ export async function createItem(data: unknown) {
     });
 
     revalidatePath("/manage");
+    revalidatePath("/inventory");
 
     return {
       success: true,
@@ -105,6 +106,27 @@ export async function deleteItem(itemId: string) {
     return {
       success: false,
       message: "An unexpected database error occurred. Please try again.",
+    };
+  }
+}
+
+export async function bulkDeleteItems(itemIds: string[]) {
+  if (!itemIds || itemIds.length == 0) {
+    return { success: false, message: "No item selected for deletion" };
+  }
+
+  try {
+    await db.delete(itemsTable).where(inArray(itemsTable.id, itemIds));
+    revalidatePath("/inventory");
+    return {
+      success: true,
+      message: `Successfully deleted ${itemIds.length} items`,
+    };
+  } catch (error) {
+    console.log("Database error during bulk delete", error);
+    return {
+      success: false,
+      message: "An unexpected error occured while deleting items",
     };
   }
 }

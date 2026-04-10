@@ -24,22 +24,36 @@ import {
   SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import { Search } from "lucide-react";
-import { useState } from "react";
+import { Search, Trash2 } from "lucide-react";
+import { useState, useTransition } from "react";
 import { CreateItemDialog } from "./create-item-dialog";
+import { bulkDeleteItems } from "@/actions/items-actions";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
-interface DataTableProps<TData, TValue> {
+interface DataTableProps<TData extends { id: string }, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends { id: string }, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
   // track sorting state locally
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [rowSelection, setRowSelection] = useState({});
+  const [isPending, startTransition] = useTransition();
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
 
   const table = useReactTable({
     data,
@@ -50,8 +64,27 @@ export function DataTable<TData, TValue>({
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onGlobalFilterChange: setGlobalFilter,
-    state: { sorting, globalFilter },
+    onRowSelectionChange: setRowSelection,
+    getRowId: (original) => original.id,
+    state: { sorting, globalFilter, rowSelection },
   });
+
+  const handleBulkDelete = () => {
+    const selectedRows = table.getFilteredSelectedRowModel().rows;
+    const itemIds = selectedRows.map((row) => row.id);
+
+    startTransition(async () => {
+      const result = await bulkDeleteItems(itemIds);
+
+      if (result.success) {
+        toast.success(result.message);
+        setRowSelection({});
+        setIsBulkDeleteOpen(false);
+      } else {
+        toast.error(result.message);
+      }
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -77,7 +110,55 @@ export function DataTable<TData, TValue>({
             )}
           </InputGroup>
         </div>
-        <CreateItemDialog />
+        <div className="flex items-center gap-4">
+          {table.getFilteredSelectedRowModel().rows.length > 0 ? (
+            <>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setIsBulkDeleteOpen(true)}
+                disabled={isPending}
+              >
+                <Trash2 className="mr-2 size-4" />
+                Delete {table.getFilteredSelectedRowModel().rows.length}{" "}
+                Selected
+              </Button>
+
+              <Dialog
+                open={isBulkDeleteOpen}
+                onOpenChange={setIsBulkDeleteOpen}
+              >
+                <DialogContent showCloseButton={false}>
+                  <DialogHeader>
+                    <DialogTitle>
+                      Are you sure you want to delete{" "}
+                      {table.getFilteredSelectedRowModel().rows.length} items ?
+                    </DialogTitle>
+                    <DialogDescription>
+                      This action cannot be undone. All selected items will be
+                      permanently removed
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button variant="outline" disabled={isPending}>
+                        Cancel
+                      </Button>
+                    </DialogClose>
+                    <Button
+                      variant="destructive"
+                      onClick={handleBulkDelete}
+                      disabled={isPending}
+                    >
+                      {isPending ? "Deleting..." : "Confirm Delete"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </>
+          ) : null}
+          <CreateItemDialog />
+        </div>
       </div>
 
       <div className="rounded-md border">

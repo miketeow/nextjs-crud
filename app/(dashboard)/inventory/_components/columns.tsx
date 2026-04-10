@@ -2,6 +2,7 @@
 import { deleteItem } from "@/actions/items-actions";
 import { ItemForm } from "@/app/(dashboard)/manage/_components/item-form";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogClose,
@@ -31,6 +32,28 @@ export type InventoryItem = {
 };
 
 export const columns: ColumnDef<InventoryItem>[] = [
+  {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
+        onCheckedChange={(value) => table.toggleAllRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
+    enableHiding: false,
+    enableSorting: false,
+  },
   {
     accessorKey: "name",
     header: ({ column }) => {
