@@ -186,7 +186,7 @@ export function ItemForm({ initialData, onSuccess }: ItemFormProps) {
             onClick={() => form.reset()}
             disabled={form.formState.isSubmitting}
           >
-            Reset
+            Clear
           </Button>
         )}
         <Button type="submit" disabled={form.formState.isSubmitting}>

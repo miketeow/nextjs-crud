@@ -2,6 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import {
   Table,
   TableBody,
   TableCell,
@@ -13,12 +18,15 @@ import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   SortingState,
   useReactTable,
 } from "@tanstack/react-table";
+import { Search } from "lucide-react";
 import { useState } from "react";
+import { CreateItemDialog } from "./create-item-dialog";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -31,6 +39,7 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   // track sorting state locally
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [globalFilter, setGlobalFilter] = useState("");
 
   const table = useReactTable({
     data,
@@ -39,11 +48,38 @@ export function DataTable<TData, TValue>({
     getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
-    state: { sorting },
+    getFilteredRowModel: getFilteredRowModel(),
+    onGlobalFilterChange: setGlobalFilter,
+    state: { sorting, globalFilter },
   });
 
   return (
-    <div>
+    <div className="space-y-4">
+      {/*toolbar*/}
+      <div className="flex items-center justify-between">
+        <div className="relative w-full max-w-sm">
+          <InputGroup>
+            <InputGroupInput
+              placeholder="Search..."
+              value={globalFilter ?? ""}
+              onChange={(event) => setGlobalFilter(event.target.value)}
+            />
+            <InputGroupAddon>
+              <Search />
+            </InputGroupAddon>
+            {globalFilter && (
+              <InputGroupAddon align="inline-end">
+                {table.getFilteredRowModel().rows.length}{" "}
+                {table.getFilteredRowModel().rows.length > 1
+                  ? "results"
+                  : "result"}
+              </InputGroupAddon>
+            )}
+          </InputGroup>
+        </div>
+        <CreateItemDialog />
+      </div>
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
