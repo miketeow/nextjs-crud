@@ -15,4 +15,6 @@ export const itemSchema = z.object({
     .number()
     .nonnegative({ message: "Stock must be a positive number" })
     .int({ message: "Stock must be a whole number" }),
+  imageUrl: z.string().optional().nullable(),
+  pdfUrl: z.string().optional().nullable(),
 });

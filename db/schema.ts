@@ -12,6 +12,8 @@ export const itemsTable = pgTable("items", {
   description: varchar("description", { length: 255 }).notNull(),
   price: integer("price").notNull().default(0),
   stock: integer("stock").notNull().default(0),
+  imageUrl: varchar("imageUrl", { length: 1024 }),
+  pdfUrl: varchar("pdfUrl", { length: 1024 }),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
   updatedAt: timestamp("updatedAt")
     .notNull()

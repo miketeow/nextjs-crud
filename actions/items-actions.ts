@@ -25,7 +25,7 @@ export async function createItem(data: unknown) {
     };
   }
 
-  const { name, description, price, stock } = parsedData.data;
+  const { name, description, price, stock, imageUrl } = parsedData.data;
 
   try {
     const priceInCents = price * 100;
@@ -34,6 +34,7 @@ export async function createItem(data: unknown) {
       description,
       price: priceInCents,
       stock,
+      imageUrl,
     });
 
     revalidatePath("/manage");
@@ -64,7 +65,7 @@ export async function updateItem(itemId: string, data: unknown) {
     };
   }
 
-  const { name, description, price, stock } = parsedData.data;
+  const { name, description, price, stock, imageUrl } = parsedData.data;
 
   try {
     const priceInCents = Math.round(price * 100);
@@ -75,6 +76,7 @@ export async function updateItem(itemId: string, data: unknown) {
         description,
         price: priceInCents,
         stock,
+        imageUrl,
       })
       .where(eq(itemsTable.id, itemId));
 
