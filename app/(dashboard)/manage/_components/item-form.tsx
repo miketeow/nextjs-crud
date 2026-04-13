@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/input-group";
 import { itemSchema } from "@/schema/item-schema";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { FileText } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -41,9 +42,11 @@ export function ItemForm({ initialData, onSuccess }: ItemFormProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(
     initialData?.imageUrl || null,
   );
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
   // create ref to track the blob URL for memory cleanup
   const objectUrlRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
@@ -83,6 +86,7 @@ export function ItemForm({ initialData, onSuccess }: ItemFormProps) {
           price: initialData.price / 100,
           stock: initialData.stock,
           imageUrl: initialData.imageUrl || "",
+          pdfUrl: initialData.pdfUrl || "",
         }
       : {
           name: "",
@@ -90,12 +94,14 @@ export function ItemForm({ initialData, onSuccess }: ItemFormProps) {
           price: 0,
           stock: 0,
           imageUrl: "",
+          pdfUrl: "",
         },
     resolver: zodResolver(itemSchema),
   });
 
   async function onSubmit(data: z.infer<typeof itemSchema>) {
     let finalImageUrl = initialData?.imageUrl || null;
+    let finalPdfUrl = initialData?.pdfUrl || null;
 
     if (imageFile) {
       if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
@@ -131,10 +137,46 @@ export function ItemForm({ initialData, onSuccess }: ItemFormProps) {
       }
     }
 
+    if (pdfFile) {
+      if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
+        toast.info(
+          "Cloud uploads are disabled in this public demo to prevent abuse. Check the GitHub repo to see the Cloudflare R2 implementation!",
+        );
+        finalPdfUrl = "https://placehold.co/400x400/png?text=Demo+Mode";
+      } else {
+        const { success, presignedUrl, publicUrl, message } =
+          await getPresignedUploadUrl(
+            pdfFile.name,
+            pdfFile.type,
+            pdfFile.size,
+            "Y3k1YPUFyv+JKxruHCT+cOoq6AeqWRkyQB68xdyuKtI=",
+          );
+
+        if (success && presignedUrl) {
+          const uploadResponse = await fetch(presignedUrl, {
+            method: "PUT",
+            body: pdfFile,
+            headers: { "Content-Type": pdfFile.type },
+          });
+
+          if (uploadResponse.ok) {
+            finalPdfUrl = publicUrl;
+          } else {
+            toast.error("Failed to upload PDF");
+            return;
+          }
+        } else {
+          toast.error(message);
+          return;
+        }
+      }
+    }
+
     // Insert database, merge the text data from react hook form with the new cloudfare url string
     const payload = {
       ...data,
       imageUrl: finalImageUrl,
+      pdfUrl: finalPdfUrl,
     };
 
     let result;
@@ -152,6 +194,12 @@ export function ItemForm({ initialData, onSuccess }: ItemFormProps) {
 
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
+        }
+
+        setPdfFile(null);
+
+        if (pdfInputRef.current) {
+          pdfInputRef.current.value = "";
         }
       }
       if (onSuccess) onSuccess();
@@ -293,6 +341,34 @@ export function ItemForm({ initialData, onSuccess }: ItemFormProps) {
             </div>
           )}
         </Field>
+        <Field>
+          <FieldLabel>Product Manual</FieldLabel>
+          <Input
+            type="file"
+            accept="application/pdf"
+            onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
+            ref={pdfInputRef}
+            className="cursor-pointer file:cursor-pointer file:text-foreground"
+          />
+          {(pdfFile || initialData?.pdfUrl) && (
+            <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-2 rounded-md border border-border w-fit">
+              <FileText className="size-4 text-blue-500" />
+              {pdfFile ? (
+                <span>{pdfFile.name}</span>
+              ) : (
+                <a
+                  href={initialData!.pdfUrl!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 hover:underline hover:text-blue-600 transition-colors"
+                >
+                  {initialData!.pdfUrl!.split("/").pop()}
+                </a>
+              )}
+              <span></span>
+            </div>
+          )}
+        </Field>
       </FieldGroup>
       <div className="flex justify-end w-full pt-4 gap-4">
         {!initialData && (
@@ -305,6 +381,10 @@ export function ItemForm({ initialData, onSuccess }: ItemFormProps) {
               setPreviewUrl(null);
               if (fileInputRef.current) {
                 fileInputRef.current.value = "";
+              }
+              setPdfFile(null);
+              if (pdfInputRef.current) {
+                pdfInputRef.current.value = "";
               }
             }}
             disabled={form.formState.isSubmitting}

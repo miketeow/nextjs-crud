@@ -25,16 +25,17 @@ export async function createItem(data: unknown) {
     };
   }
 
-  const { name, description, price, stock, imageUrl } = parsedData.data;
+  const { name, description, price, stock, imageUrl, pdfUrl } = parsedData.data;
 
   try {
-    const priceInCents = price * 100;
+    const priceInCents = Math.round(price * 100);
     await db.insert(itemsTable).values({
       name,
       description,
       price: priceInCents,
       stock,
       imageUrl,
+      pdfUrl,
     });
 
     revalidatePath("/manage");
@@ -65,7 +66,7 @@ export async function updateItem(itemId: string, data: unknown) {
     };
   }
 
-  const { name, description, price, stock, imageUrl } = parsedData.data;
+  const { name, description, price, stock, imageUrl, pdfUrl } = parsedData.data;
 
   try {
     const priceInCents = Math.round(price * 100);
@@ -77,6 +78,7 @@ export async function updateItem(itemId: string, data: unknown) {
         price: priceInCents,
         stock,
         imageUrl,
+        pdfUrl,
       })
       .where(eq(itemsTable.id, itemId));
 
